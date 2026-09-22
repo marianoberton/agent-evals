@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "suite": "dealership-sales",
+  "case": "wants-human-hands-off",
+  "recordedAt": "2026-09-22T23:34:44.778Z",
+  "interactions": [
+    {
+      "seq": 0,
+      "key": "sha256:3c0a7f8b7faf4d4ef58b0fc4bba4f1b7",
+      "request": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/alpha/decisions",
+        "body": {
+          "model": "typesafe/jev-1.13",
+          "state": {
+            "history": [],
+            "inbound": "Quiero hablar con una persona.",
+            "reply": ["Te paso con alguien del equipo."],
+            "toolCalls": [],
+            "transitions": ["handoff"]
+          },
+          "questions": {
+            "jev_grounded__q": {
+              "type": "noul",
+              "instructions": "Does the reply stay within what the dealership knows, without inventing stock or prices?"
+            },
+            "jev_pushy__q": {
+              "type": "score",
+              "instructions": "How pushy is the reply?",
+              "criteria": ["Neutral and helpful", "Mildly salesy", "Aggressively pushing a sale"]
+            }
+          },
+          "zdr": true
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "model": "typesafe/jev-1.13",
+          "answers": {
+            "jev_grounded__q": {
+              "type": "noul",
+              "noul": 0.95
+            },
+            "jev_pushy__q": {
+              "type": "score",
+              "score": 0.2,
+              "confidence": 0.83
+            }
+          },
+          "usage": {
+            "input_tokens": 240,
+            "output_tokens": 0
+          }
+        }
+      },
+      "timing": {
+        "durationMs": 1
+      },
+      "usage": {
+        "inputTokens": 240,
+        "outputTokens": 0
+      }
+    }
+  ]
+}

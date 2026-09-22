@@ -25,11 +25,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
-      - run: pnpm test:coverage
+      # Build first: the packaging gate packs the real tarball, so dist/ has to
+      # exist before the tests run.
       - run: pnpm build
+      - run: pnpm test:coverage
 
       - name: validate the examples
-        run: node dist/cli.js validate examples/echo-agent/echo.suite.ts examples/calibration/calibrate.suite.ts examples/yaml-cases/yaml.suite.ts
+        run: node dist/cli.js validate examples/echo-agent/echo.suite.ts examples/calibration/calibrate.suite.ts examples/yaml-cases/yaml.suite.ts examples/guarded-agent/dealership.suite.ts
 
       # Cases written in YAML must behave exactly like cases written in TS.
       - name: yaml cases example
@@ -39,7 +41,10 @@ jobs:
       - name: echo-agent example
         run: node dist/cli.js run examples/echo-agent/echo.suite.ts --fail-under --no-report
 
-      # Strict replay: this must work with no API key and no network.
+      # Strict replay: these must work with no API key and no network.
+      - name: dealership example replays offline
+        run: node dist/cli.js run examples/guarded-agent/dealership.suite.ts --cassettes replay --fail-under --no-report
+
       - name: calibration example replays offline
         run: node dist/cli.js calibrate examples/calibration/calibrate.suite.ts --cassettes replay --no-report
 

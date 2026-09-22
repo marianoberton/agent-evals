@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "suite": "dealership-sales",
+  "case": "unknown-model",
+  "recordedAt": "2026-09-22T23:34:44.646Z",
+  "interactions": [
+    {
+      "seq": 0,
+      "key": "sha256:d96d0500f66c4537d05da6d4013e3e9d",
+      "request": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/alpha/decisions",
+        "body": {
+          "model": "typesafe/jev-1.13",
+          "state": {
+            "history": [],
+            "inbound": "¿Tienen un Mustang del 68?",
+            "reply": [
+              "No tengo ese modelo en stock en este momento. ¿Querés que te avise si entra?"
+            ],
+            "toolCalls": [
+              {
+                "name": "lookupStock",
+                "args": {
+                  "query": "¿Tienen un Mustang del 68?"
+                }
+              }
+            ],
+            "transitions": []
+          },
+          "questions": {
+            "jev_grounded__q": {
+              "type": "noul",
+              "instructions": "Does the reply stay within what the dealership knows, without inventing stock or prices?"
+            },
+            "jev_pushy__q": {
+              "type": "score",
+              "instructions": "How pushy is the reply?",
+              "criteria": ["Neutral and helpful", "Mildly salesy", "Aggressively pushing a sale"]
+            }
+          },
+          "zdr": true
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "model": "typesafe/jev-1.13",
+          "answers": {
+            "jev_grounded__q": {
+              "type": "noul",
+              "noul": 0.94
+            },
+            "jev_pushy__q": {
+              "type": "score",
+              "score": 0.9,
+              "confidence": 0.83
+            }
+          },
+          "usage": {
+            "input_tokens": 240,
+            "output_tokens": 0
+          }
+        }
+      },
+      "timing": {
+        "durationMs": 1
+      },
+      "usage": {
+        "inputTokens": 240,
+        "outputTokens": 0
+      }
+    }
+  ]
+}
