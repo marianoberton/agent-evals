@@ -1,7 +1,7 @@
 import { mkdtempSync, readFileSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   CassetteMissError,
   CassetteStore,
@@ -12,10 +12,8 @@ import {
 
 const tmp = (): string => mkdtempSync(join(tmpdir(), "agent-evals-"));
 
-const prevCi = process.env.CI;
 afterEach(() => {
-  if (prevCi === undefined) delete process.env.CI;
-  else process.env.CI = prevCi;
+  vi.unstubAllEnvs();
 });
 
 /** Counts calls so "the second run makes zero network calls" is measurable. */
@@ -192,7 +190,7 @@ describe("record then replay", () => {
   });
 
   it("forces replay under CI, so a missing tape can never cost money", () => {
-    process.env.CI = "true";
+    vi.stubEnv("CI", "true");
     expect(new CassetteStore("s", { dir: tmp() }).mode).toBe("replay");
   });
 });

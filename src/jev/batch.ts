@@ -38,9 +38,7 @@ export function assertDeterministicState(scorerId: string, state: unknown, path 
   for (const [key, value] of Object.entries(state as Record<string, unknown>)) {
     if (VOLATILE.has(key.toLowerCase())) {
       throw new NonDeterministicStateError(
-        `Scorer "${scorerId}" put ${path}.${key} into its Jev state. That value changes every ` +
-          "run, so the cassette would never match and the suite would stop being reproducible. " +
-          "Drop it, or pass { allowVolatileState: true } if you really mean it.",
+        `Scorer "${scorerId}" put ${path}.${key} into its Jev state. That value changes every run, so the cassette would never match and the suite would stop being reproducible. Drop it, or pass { allowVolatileState: true } if you really mean it.`,
       );
     }
     assertDeterministicState(scorerId, value, `${path}.${key}`);
