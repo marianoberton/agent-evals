@@ -1,0 +1,123 @@
+name: agent-evals
+description: Run agent-evals suites, gate on the threshold, and comment the report table on the pull request.
+author: Mariano Berton
+branding:
+  icon: check-square
+  color: green
+
+inputs:
+  suites:
+    description: Suite files or globs to run.
+    required: false
+    default: evals/*.suite.ts
+  threshold:
+    description: Override the suite threshold.
+    required: false
+  fail-under:
+    description: Fail the job when the score is under the threshold.
+    required: false
+    default: "true"
+  comment:
+    description: Post the report table as a pull-request comment.
+    required: false
+    default: "true"
+  include-llm-judge:
+    description: Opt in to the non-deterministic LLM judge. Off by default, on purpose.
+    required: false
+    default: "false"
+  baseline:
+    description: Path to a baseline report. When set, also diffs against it and fails on a regression.
+    required: false
+  working-directory:
+    description: Where to run.
+    required: false
+    default: "."
+  version:
+    description: agent-evals version to run via npx.
+    required: false
+    default: latest
+
+outputs:
+  score:
+    description: The suite score, or the lowest when several suites ran.
+    value: ${{ steps.run.outputs.score }}
+  passed:
+    description: "true when every suite cleared its threshold."
+    value: ${{ steps.run.outputs.passed }}
+  report:
+    description: Path to the markdown report.
+    value: ${{ steps.run.outputs.report }}
+
+runs:
+  using: composite
+  steps:
+    - id: run
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      # Cassettes replay because CI is set, so this needs no API key.
+      run: |
+        set -o pipefail
+        args=(run ${{ inputs.suites }} --markdown agent-evals-report.md)
+        [ -n "${{ inputs.threshold }}" ] && args+=(--threshold "${{ inputs.threshold }}")
+        [ "${{ inputs.fail-under }}" = "true" ] && args+=(--fail-under)
+        [ "${{ inputs.include-llm-judge }}" = "true" ] && args+=(--include-llm-judge)
+
+        if npx --yes agent-evals@${{ inputs.version }} "${args[@]}"; then
+          echo "passed=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "passed=false" >> "$GITHUB_OUTPUT"
+          echo "failed=1" >> "$GITHUB_ENV"
+        fi
+
+        score=$(node -e "
+          const fs=require('fs');
+          const r=JSON.parse(fs.readFileSync('evals/reports/latest.json','utf8'));
+          process.stdout.write(String(r.score ?? ''));
+        " 2>/dev/null || echo "")
+        echo "score=$score" >> "$GITHUB_OUTPUT"
+        echo "report=agent-evals-report.md" >> "$GITHUB_OUTPUT"
+
+    - name: Diff against the baseline
+      if: inputs.baseline != ''
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        npx --yes agent-evals@${{ inputs.version }} diff "${{ inputs.baseline }}" \
+          evals/reports/latest.json --fail-on-regression | tee -a agent-evals-report.md
+
+    - name: Comment on the pull request
+      if: inputs.comment == 'true' && github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require("fs");
+          const dir = "${{ inputs.working-directory }}";
+          const path = `${dir}/agent-evals-report.md`.replace("./", "");
+          if (!fs.existsSync(path)) return;
+
+          const marker = "<!-- agent-evals -->";
+          const body = `${marker}\n${fs.readFileSync(path, "utf8")}`;
+
+          // One comment per PR, edited in place: a bot that posts a new comment
+          // on every push buries the conversation.
+          const { data: comments } = await github.rest.issues.listComments({
+            ...context.repo, issue_number: context.issue.number, per_page: 100,
+          });
+          const existing = comments.find(
+            (c) => c.user.type === "Bot" && c.body.startsWith(marker),
+          );
+
+          if (existing) {
+            await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
+          } else {
+            await github.rest.issues.createComment({
+              ...context.repo, issue_number: context.issue.number, body,
+            });
+          }
+
+    - name: Fail the job when the gate did not pass
+      if: env.failed == '1'
+      shell: bash
+      run: |
+        echo "::error::agent-evals scored under the threshold"
+        exit 1

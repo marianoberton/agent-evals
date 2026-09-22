@@ -4,7 +4,7 @@ Most agent evals are an LLM grading another LLM on a 1–5 scale. That is not so
 
 Framework-agnostic: the agent under test is `(input) => Promise<Outcome>`. Model calls are recorded once and replayed, so the suite is fast, free and reproducible.
 
-> **Status: M3.** Core contract, runner, 14 deterministic scorers, the report, the Jev client, `jevJudge`, cassette record/replay, the full CLI, and the vitest helpers. `llmJudge`, YAML cases and the GitHub Action land in M4–M5.
+> **Status: M4.** Everything works: the contract, the runner, 16 scorers, the report, Jev, cassettes, the CLI, the vitest helpers, YAML cases and the GitHub Action. M5 is the release.
 
 ## The 20-line example
 
@@ -209,6 +209,19 @@ jev:grounded  n=6  brier=0.176  max gap=0.31
 
 Read the last line. On this data, gating at 0.9 **would have let a wrong answer through** — the judge said 0.95 and was right two times in three. That is what the command is for.
 
+## In CI
+
+```yaml
+- uses: marianoberton/agent-evals/action@v0
+  with:
+    suites: evals/*.suite.ts
+    baseline: evals/baseline.json   # optional: also fail on a regression
+```
+
+It runs the suites, fails the job under the threshold, and posts the table as a
+single pull-request comment that it edits in place on every push. **No API key is
+needed**: cassettes replay because `CI` is set. Details in [docs/CI.md](docs/CI.md).
+
 ## Non-goals
 
 Not a prompt playground, not a labelling UI, not a tracing backend (it consumes traces, it does not store them), no hosted service. Files in the repo, report in the PR.
@@ -221,7 +234,7 @@ Not a prompt playground, not a labelling UI, not a tracing backend (it consumes 
 | **M1** ✅ | Jev client + `jevJudge` + cassette record/replay |
 | **M2** ✅ | CLI `diff` / `record` / `calibrate`, JSON reports |
 | **M3** ✅ | `agent-evals/vitest`: `defineEvals` and `expectAgent` |
-| M4 | `llmJudge` behind a flag, YAML cases, GitHub Action |
+| **M4** ✅ | `llmJudge` behind a flag, YAML cases, GitHub Action |
 | M5 | README polish, npm 0.1.0, [guarded-agent](https://github.com/marianoberton/guarded-agent) using it in CI |
 
 MIT.

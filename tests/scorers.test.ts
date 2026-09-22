@@ -5,6 +5,11 @@ import type { Case, OutcomeInput, Score, Scorer, SuiteMeta } from "../src/index.
 
 const SUITE: SuiteMeta = { name: "t", threshold: 1 };
 
+/** Deterministic scorers are pure; reaching for the network here is the bug. */
+const neverCalled = (() => {
+  throw new Error("a deterministic scorer must not fetch");
+}) as unknown as typeof globalThis.fetch;
+
 const kase = (over: Partial<Case> = {}): Case => ({
   id: "c",
   history: [],
@@ -17,7 +22,12 @@ const kase = (over: Partial<Case> = {}): Case => ({
 });
 
 const run = (scorer: Scorer, outcome: OutcomeInput, c: Case = kase()): Score =>
-  scorer.score({ outcome: normalizeOutcome(outcome), case: c, suite: SUITE }) as Score;
+  scorer.score({
+    outcome: normalizeOutcome(outcome),
+    case: c,
+    suite: SUITE,
+    fetch: neverCalled,
+  }) as Score;
 
 /** Every scorer ships a passing test, a failing test and a skip test. */
 describe("toolCalled", () => {

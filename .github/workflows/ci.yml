@@ -29,7 +29,11 @@ jobs:
       - run: pnpm build
 
       - name: validate the examples
-        run: node dist/cli.js validate examples/echo-agent/echo.suite.ts examples/calibration/calibrate.suite.ts
+        run: node dist/cli.js validate examples/echo-agent/echo.suite.ts examples/calibration/calibrate.suite.ts examples/yaml-cases/yaml.suite.ts
+
+      # Cases written in YAML must behave exactly like cases written in TS.
+      - name: yaml cases example
+        run: node dist/cli.js run examples/yaml-cases/yaml.suite.ts --fail-under --no-report
 
       # The example is the contract. If it stops passing, the contract broke.
       - name: echo-agent example

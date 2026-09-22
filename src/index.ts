@@ -33,6 +33,10 @@ export { AgentTimeoutError, runSuite, selectCases, VERSION } from "./core/run.js
 export { scorers } from "./scorers/index.js";
 export { defaultState, jevJudge } from "./scorers/jevJudge.js";
 export type { JevJudgeOptions } from "./scorers/jevJudge.js";
+export { llmJudge, parseVerdict } from "./scorers/llmJudge.js";
+export type { LlmJudgeOptions } from "./scorers/llmJudge.js";
+
+export { loadCases, parseCaseFile, YamlCaseError } from "./yaml/loader.js";
 
 /** Question builders: `jev.noul(...)`, `jev.choice(...)`, `jev.score(...)`. */
 export * as jev from "./jev/questions.js";

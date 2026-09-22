@@ -185,6 +185,7 @@ async function runCase(
     outcome: enriched,
     case: kase,
     suite: { name: suite.name, threshold },
+    fetch: cassette.fetch,
   };
 
   const entries: ScoreEntry[] = new Array(active.length);

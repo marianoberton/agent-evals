@@ -148,6 +148,11 @@ export interface ScoreContext {
   readonly answers?: Readonly<Record<string, JevAnswer>>;
   /** The batched Jev call failed. The scorer decides whether to fail or skip. */
   readonly planError?: Error;
+  /**
+   * The case's cassette-backed fetch. Async scorers must use this rather than
+   * the global, or their calls are neither recorded nor replayed.
+   */
+  readonly fetch: typeof globalThis.fetch;
 }
 
 export interface Scorer {

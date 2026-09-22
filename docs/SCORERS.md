@@ -76,6 +76,21 @@ Matching folds case and diacritics by default, so `notContains("descuento")` als
 `fetch`. Every Jev scorer of a case is merged into one request. Full detail, including
 the reproducibility rules for `state`, in [JEV_JUDGE.md](JEV_JUDGE.md).
 
+### The LLM judge, off the gate
+
+`llmJudge({ rubric, passAbove })` asks a chat model to grade the reply and returns
+its self-reported score. It is `kind: "llm"`, which means **it does not run at all**
+unless you pass `--include-llm-judge`.
+
+That default is the library's whole argument, expressed as a flag: ask the same
+model the same question twice and you can get 4 and then 2. A threshold on that is
+not a gate, it is a coin you flip on every deploy. Use `jevJudge` for anything you
+intend to block on; use `llmJudge` to read an opinion while you are still working
+out what the rule should be.
+
+It goes through the cassette, so a recorded verdict replays — but re-recording can
+change it, which is exactly the property `jevJudge` does not have.
+
 ### Budgets
 
 | Scorer | Reads | Limit |

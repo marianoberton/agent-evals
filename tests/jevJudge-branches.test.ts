@@ -4,6 +4,11 @@ import type { Case, JevAnswer, Score, Scorer, SuiteMeta } from "../src/index.js"
 
 const SUITE: SuiteMeta = { name: "t", threshold: 1 };
 
+/** jevJudge reads pre-fetched answers; it must never call out from `score`. */
+const neverCalled = (() => {
+  throw new Error("jevJudge must not fetch from score()");
+}) as unknown as typeof globalThis.fetch;
+
 const kase = (over: Partial<Case> = {}): Case => ({
   id: "c",
   history: [{ role: "user", text: "hola" }],
@@ -21,6 +26,7 @@ const grade = (scorer: Scorer, answer: JevAnswer | undefined, planError?: Error)
     outcome: normalizeOutcome({ outbound: "hola" }),
     case: kase(),
     suite: SUITE,
+    fetch: neverCalled,
     ...(answer ? { answers: { q: answer } } : {}),
     ...(planError ? { planError } : {}),
   }) as Score;
