@@ -33,18 +33,40 @@ const run = (cmd: string, args: string[], cwd: string): string =>
  * tested. `npm_execpath` is set when vitest was started by npm; otherwise npm
  * ships next to the node binary.
  */
-const npmCli = (): string => {
+const npmCli = (): string | undefined => {
   const fromEnv = process.env.npm_execpath;
-  if (fromEnv?.endsWith(".js") && existsSync(fromEnv)) return fromEnv;
-  const bundled = join(dirname(process.execPath), "node_modules", "npm", "bin", "npm-cli.js");
-  if (existsSync(bundled)) return bundled;
-  const unix = "/usr/lib/node_modules/npm/bin/npm-cli.js";
-  if (existsSync(unix)) return unix;
-  throw new Error("could not locate npm-cli.js");
+  if (fromEnv?.endsWith("npm-cli.js") && existsSync(fromEnv)) return fromEnv;
+
+  const bin = dirname(process.execPath);
+  const candidates = [
+    // Windows, and any layout where npm sits beside the binary.
+    join(bin, "node_modules", "npm", "bin", "npm-cli.js"),
+    // Linux/macOS, including the hostedtoolcache layout setup-node produces.
+    join(bin, "..", "lib", "node_modules", "npm", "bin", "npm-cli.js"),
+    "/usr/local/lib/node_modules/npm/bin/npm-cli.js",
+    "/usr/lib/node_modules/npm/bin/npm-cli.js",
+  ];
+  return candidates.find((p) => existsSync(p));
 };
 
-const npm = (args: string[], cwd: string): string =>
-  run(process.execPath, [npmCli(), ...args], cwd);
+/**
+ * npm, driven by this Node where possible.
+ *
+ * Calling `npm-cli.js` directly avoids the two traps here: Node 22 refuses to
+ * spawn `npm.cmd` without a shell on Windows, and `npm_execpath` points at pnpm
+ * when the tests are run by pnpm. Where npm cannot be located — an unusual
+ * install layout — fall back to a shell, which resolves it from PATH.
+ */
+const npm = (args: string[], cwd: string): string => {
+  const cli = npmCli();
+  if (cli) return run(process.execPath, [cli, ...args], cwd);
+  return execFileSync("npm", args, {
+    cwd,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+    shell: true,
+  });
+};
 
 describe("the published package", () => {
   it("declares the entry points it promises", () => {
