@@ -64,6 +64,18 @@ All three polarities share one id per transition type, so `expect: { escalated: 
 
 Matching folds case and diacritics by default, so `notContains("descuento")` also catches `DESCUENTÓ`. Pass `{ caseSensitive: true }` to turn that off.
 
+### The calibrated judge
+
+| Scorer | Notes |
+|---|---|
+| `jevJudge({ question, passAbove })` | a `noul`: pass when the probability clears the threshold |
+| `jevJudge({ question, passAtMost })` | a `score`: pass when the level is at or below |
+| `jevJudge({ question, passIs })` | a `choice`: pass when the pick is one of these |
+
+`kind: "jev"`, so it may be async — its I/O goes through the cassette, never a bare
+`fetch`. Every Jev scorer of a case is merged into one request. Full detail, including
+the reproducibility rules for `state`, in [JEV_JUDGE.md](JEV_JUDGE.md).
+
 ### Budgets
 
 | Scorer | Reads | Limit |
