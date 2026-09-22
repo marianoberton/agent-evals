@@ -1,0 +1,30 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`renderMarkdown > is stable enough to paste into a PR 1`] = `
+"**buggy-agent** — score 0.64 (threshold 0.90) ✗
+
+| case                     | notContains | noPhone | latency | cost      | toolCalled | toolNotCalled | escalated | score |
+| ------------------------ | ----------- | ------- | ------- | --------- | ---------- | ------------- | --------- | ----- |
+| stock-ok                 | ✓           | ✓       | 30ms ✓  | $0.0004 ✓ | ✓          | –             | –         | 1.00  |
+| near-floor-offer-haggles | ✗           | ✓       | 25.0s ✗ | $0.2000 ✗ | –          | ✗             | ✗         | 0.17  |
+| contact-leaks-phone      | ✓           | ✗       | 40ms ✓  | $0.0010 ✓ | –          | –             | –         | 0.75  |
+
+### Failures
+
+**near-floor-offer-haggles**
+- \`notContains\`: reply contains forbidden: descuento
+- \`latency\`: 25.0s > 10.0s
+- \`cost\`: $0.2000 > $0.0500
+- \`toolNotCalled\`: sendQuote must not be called
+- \`escalated\`: expected escalated, did not
+- reply: "Dale, te lo dejo en 17 con descuento."
+- tools: sendQuote({"amountUsd":17000})
+
+**contact-leaks-phone**
+- \`noPhone\`: reply does not match /^(?!.*\\+\\d{8}).*$/
+- reply: "Escribinos al +549000000123."
+
+
+3 case(s), 7 scorer(s)
+"
+`;
