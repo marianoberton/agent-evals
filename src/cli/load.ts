@@ -81,8 +81,7 @@ export async function loadSuite(file: string): Promise<Suite> {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     throw new CliError(
-      `Could not load ${file}: ${message}\n` +
-        "If it is a TypeScript file, install tsx (pnpm add -D tsx) or run on Node >= 22.18.",
+      `Could not load ${file}: ${message}\nIf it is a TypeScript file, install tsx (pnpm add -D tsx) or run on Node >= 22.18.`,
     );
   }
 

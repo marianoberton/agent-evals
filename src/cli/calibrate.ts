@@ -131,11 +131,7 @@ export function calibrate(scorerId: string, points: readonly Point[], unlabelled
 
 export function renderCalibration(c: Calibration): string {
   if (c.n === 0) {
-    return (
-      `${c.scorerId}: nothing to calibrate.\n` +
-      `  ${c.unlabelled} prediction(s) had no ground truth. Add \`meta: { expected: { "${c.scorerId}": true } }\`\n` +
-      "  to the cases whose right answer you already know.\n"
-    );
+    return `${c.scorerId}: nothing to calibrate.\n  ${c.unlabelled} prediction(s) had no ground truth. Add \`meta: { expected: { "${c.scorerId}": true } }\`\n  to the cases whose right answer you already know.\n`;
   }
 
   const lines = [
