@@ -19,7 +19,7 @@ import type {
   Suite,
 } from "./types.js";
 
-export const VERSION = "0.1.0-dev";
+export const VERSION = "0.1.0";
 
 export class AgentTimeoutError extends Error {
   override name = "AgentTimeoutError";
