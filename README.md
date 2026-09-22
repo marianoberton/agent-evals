@@ -4,7 +4,7 @@ Most agent evals are an LLM grading another LLM on a 1–5 scale. That is not so
 
 Framework-agnostic: the agent under test is `(input) => Promise<Outcome>`. Model calls are recorded once and replayed, so the suite is fast, free and reproducible.
 
-> **Status: M2.** Core contract, runner, 14 deterministic scorers, the report, the Jev client, `jevJudge`, cassette record/replay, and the full CLI. The vitest helper, `llmJudge`, YAML cases and the GitHub Action land in M3–M5.
+> **Status: M3.** Core contract, runner, 14 deterministic scorers, the report, the Jev client, `jevJudge`, cassette record/replay, the full CLI, and the vitest helpers. `llmJudge`, YAML cases and the GitHub Action land in M4–M5.
 
 ## The 20-line example
 
@@ -150,6 +150,30 @@ Every one ships with a passing test, a failing test and a skip test. Details in
 [docs/SCORERS.md](docs/SCORERS.md); writing cases is in [docs/WRITING_CASES.md](docs/WRITING_CASES.md);
 the judge is in [docs/JEV_JUDGE.md](docs/JEV_JUDGE.md) and recording in [docs/CASSETTES.md](docs/CASSETTES.md).
 
+## Evals are tests
+
+A suite becomes vitest tests in one line — same runner, same watch mode, same CI job:
+
+```ts
+import { defineEvals } from "agent-evals/vitest";
+import suite from "./dealership.suite.js";
+
+defineEvals(suite);   // one `it` per case, plus one for the threshold
+```
+
+Or assert inline, next to the unit tests for the same code:
+
+```ts
+await expectAgent(runTurn, deps)
+  .given(history)
+  .receives("¿Me lo dejás en 15?")
+  .toEscalate()
+  .toNotCallTool("sendQuote");
+```
+
+`expectAgent` throws a plain `Error`, so it needs no test framework and works
+under jest or `node:test` too. Details in [docs/VITEST.md](docs/VITEST.md).
+
 ## Determinism
 
 **A suite with cassettes present produces the same report twice. Otherwise it is a bug**, and there is a test that says so. Everything that cannot hold that promise — wall clock, machine load — lives in `report.runMeta` and `CaseReport.durationMs`, which `agent-evals diff` ignores.
@@ -196,7 +220,7 @@ Not a prompt playground, not a labelling UI, not a tracing backend (it consumes 
 | **M0** ✅ | types, `defineSuite`/`defineCase`, runner, 14 deterministic scorers, markdown + terminal report |
 | **M1** ✅ | Jev client + `jevJudge` + cassette record/replay |
 | **M2** ✅ | CLI `diff` / `record` / `calibrate`, JSON reports |
-| M3 | `agent-evals/vitest` helper |
+| **M3** ✅ | `agent-evals/vitest`: `defineEvals` and `expectAgent` |
 | M4 | `llmJudge` behind a flag, YAML cases, GitHub Action |
 | M5 | README polish, npm 0.1.0, [guarded-agent](https://github.com/marianoberton/guarded-agent) using it in CI |
 
