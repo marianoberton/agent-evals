@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "suite": "calibration",
+  "case": "invents-stock",
+  "recordedAt": "2026-09-22T23:05:25.245Z",
+  "interactions": [
+    {
+      "seq": 0,
+      "key": "sha256:41b00d2e475e1bacb2b5058d3fbe7695",
+      "request": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/alpha/decisions",
+        "body": {
+          "model": "typesafe/jev-1.13",
+          "state": {
+            "history": [],
+            "inbound": "¿Qué Corolla tienen?",
+            "reply": ["Tenemos catorce unidades del Corolla 2026 en cuatro colores."],
+            "toolCalls": [],
+            "transitions": []
+          },
+          "questions": {
+            "jev_grounded__q": {
+              "type": "noul",
+              "instructions": "Does the reply stay within what the dealership actually knows, without inventing stock or prices?"
+            }
+          },
+          "zdr": true
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "model": "typesafe/jev-1.13",
+          "answers": {
+            "jev_grounded__q": {
+              "type": "noul",
+              "noul": 0.31
+            }
+          },
+          "usage": {
+            "input_tokens": 180,
+            "output_tokens": 0
+          }
+        }
+      },
+      "timing": {
+        "durationMs": 1
+      },
+      "usage": {
+        "inputTokens": 180,
+        "outputTokens": 0
+      }
+    }
+  ]
+}

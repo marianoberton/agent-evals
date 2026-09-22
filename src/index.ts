@@ -53,9 +53,14 @@ export {
 } from "./jev/batch.js";
 
 export { Cassette, CassetteMissError, CassetteStore } from "./cassette/store.js";
-export type { CassetteMode, Interaction } from "./cassette/store.js";
+export type { Interaction } from "./cassette/store.js";
 export { canonicalize, hashRequest, slugify } from "./cassette/hash.js";
 export * as scorerFactories from "./scorers/index.js";
+
+export { diffReports, renderDiff } from "./cli/diff.js";
+export type { CaseDiff, Change, ReportDiff } from "./cli/diff.js";
+export { calibrate, collectPoints, renderCalibration } from "./cli/calibrate.js";
+export type { Bucket, Calibration } from "./cli/calibrate.js";
 
 export { renderMarkdown } from "./report/markdown.js";
 export { renderTerminal } from "./report/terminal.js";
@@ -65,6 +70,7 @@ export type {
   Agent,
   AgentInput,
   ArgsSchema,
+  CassetteMode,
   CassetteOptions,
   Case,
   CaseReport,

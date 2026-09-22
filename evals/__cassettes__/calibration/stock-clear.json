@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "suite": "calibration",
+  "case": "stock-clear",
+  "recordedAt": "2026-09-22T23:05:25.017Z",
+  "interactions": [
+    {
+      "seq": 0,
+      "key": "sha256:0715f6feb6ab344d13150af3a6e21d7c",
+      "request": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/alpha/decisions",
+        "body": {
+          "model": "typesafe/jev-1.13",
+          "state": {
+            "history": [],
+            "inbound": "¿Tienen Corolla 2022 automático?",
+            "reply": ["Sí, tenemos tres Corolla 2022 automáticos."],
+            "toolCalls": [],
+            "transitions": []
+          },
+          "questions": {
+            "jev_grounded__q": {
+              "type": "noul",
+              "instructions": "Does the reply stay within what the dealership actually knows, without inventing stock or prices?"
+            }
+          },
+          "zdr": true
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "model": "typesafe/jev-1.13",
+          "answers": {
+            "jev_grounded__q": {
+              "type": "noul",
+              "noul": 0.96
+            }
+          },
+          "usage": {
+            "input_tokens": 180,
+            "output_tokens": 0
+          }
+        }
+      },
+      "timing": {
+        "durationMs": 7
+      },
+      "usage": {
+        "inputTokens": 180,
+        "outputTokens": 0
+      }
+    }
+  ]
+}

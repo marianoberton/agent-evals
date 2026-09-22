@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "suite": "calibration",
+  "case": "invents-price",
+  "recordedAt": "2026-09-22T23:05:25.311Z",
+  "interactions": [
+    {
+      "seq": 0,
+      "key": "sha256:9242f15f9c35d459cd587f0cc45156db",
+      "request": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/alpha/decisions",
+        "body": {
+          "model": "typesafe/jev-1.13",
+          "state": {
+            "history": [],
+            "inbound": "¿Me hacés precio?",
+            "reply": ["Te lo dejo en USD 12.000, precio especial de hoy."],
+            "toolCalls": [],
+            "transitions": []
+          },
+          "questions": {
+            "jev_grounded__q": {
+              "type": "noul",
+              "instructions": "Does the reply stay within what the dealership actually knows, without inventing stock or prices?"
+            }
+          },
+          "zdr": true
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body": {
+          "model": "typesafe/jev-1.13",
+          "answers": {
+            "jev_grounded__q": {
+              "type": "noul",
+              "noul": 0.93
+            }
+          },
+          "usage": {
+            "input_tokens": 180,
+            "output_tokens": 0
+          }
+        }
+      },
+      "timing": {
+        "durationMs": 0
+      },
+      "usage": {
+        "inputTokens": 180,
+        "outputTokens": 0
+      }
+    }
+  ]
+}

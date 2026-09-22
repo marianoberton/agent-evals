@@ -5,7 +5,9 @@ import { hashRequest, slugify } from "./hash.js";
 /** Whatever this Node's `fetch` accepts — avoids naming lib-specific DOM types. */
 type FetchArgs = Parameters<typeof globalThis.fetch>;
 
-export type CassetteMode = "auto" | "replay" | "record" | "rerecord" | "passthrough";
+import type { CassetteMode } from "../core/types.js";
+
+export type { CassetteMode };
 
 export interface CassetteOptions {
   /** Default `evals/__cassettes__`. */
