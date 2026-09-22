@@ -62,6 +62,14 @@ export type { CaseDiff, Change, ReportDiff } from "./cli/diff.js";
 export { calibrate, collectPoints, renderCalibration } from "./cli/calibrate.js";
 export type { Bucket, Calibration } from "./cli/calibrate.js";
 
+/**
+ * `expectAgent` needs no test framework — it throws a plain Error — so it lives
+ * at the root and works under jest or node:test too. `defineEvals` genuinely
+ * needs vitest's `describe`/`it`, so it stays behind `agent-evals/vitest`.
+ */
+export { AgentExpectationError, expectAgent } from "./vitest/expectAgent.js";
+export type { AgentExpectation } from "./vitest/expectAgent.js";
+
 export { renderMarkdown } from "./report/markdown.js";
 export { renderTerminal } from "./report/terminal.js";
 export { columnsOf, renderCell } from "./report/cells.js";
