@@ -28,9 +28,16 @@ jobs:
       - run: pnpm test:coverage
       - run: pnpm build
 
+      - name: validate the examples
+        run: node dist/cli.js validate examples/echo-agent/echo.suite.ts examples/calibration/calibrate.suite.ts
+
       # The example is the contract. If it stops passing, the contract broke.
       - name: echo-agent example
         run: node dist/cli.js run examples/echo-agent/echo.suite.ts --fail-under --no-report
+
+      # Strict replay: this must work with no API key and no network.
+      - name: calibration example replays offline
+        run: node dist/cli.js calibrate examples/calibration/calibrate.suite.ts --cassettes replay --no-report
 
       # And the buggy agent must stay red, or the harness stopped catching things.
       - name: buggy agent must fail

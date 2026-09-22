@@ -4,7 +4,7 @@ Most agent evals are an LLM grading another LLM on a 1–5 scale. That is not so
 
 Framework-agnostic: the agent under test is `(input) => Promise<Outcome>`. Model calls are recorded once and replayed, so the suite is fast, free and reproducible.
 
-> **Status: M1.** Core contract, runner, 14 deterministic scorers, the report, the Jev client, `jevJudge` and cassette record/replay. The CLI's other commands, the vitest helper, `llmJudge`, YAML cases and the GitHub Action land in M2–M5.
+> **Status: M2.** Core contract, runner, 14 deterministic scorers, the report, the Jev client, `jevJudge`, cassette record/replay, and the full CLI. The vitest helper, `llmJudge`, YAML cases and the GitHub Action land in M3–M5.
 
 ## The 20-line example
 
@@ -77,10 +77,15 @@ pnpm add -D agent-evals
 
 ```bash
 agent-evals run evals/*.suite.ts                  # table + evals/reports/<ts>.json
-agent-evals run --threshold 0.95 --fail-under     # CI gate: exit 1 under the threshold
-agent-evals run --tag policy                      # only cases with a tag
-agent-evals run --only price-negotiation-escalates
+agent-evals run evals/*.suite.ts --fail-under     # CI gate: exit 1 under the threshold
+agent-evals validate evals/*.suite.ts             # load and check, run nothing
+agent-evals record evals/*.suite.ts               # re-record the cassettes
+agent-evals diff baseline.json latest.json --fail-on-regression
+agent-evals calibrate evals/*.suite.ts            # Jev probabilities vs known answers
 ```
+
+Also: `--tag policy`, `--only <caseId>`, `--threshold`, `--concurrency`,
+`--cassettes <mode>`, `--markdown report.md`. Details in [docs/CI.md](docs/CI.md).
 
 ## The agent contract
 
@@ -162,7 +167,23 @@ zero network calls. CI is forced into strict replay, so it can never spend money
 
 ## Jev is not infallible
 
-Jev cannot return a value outside your schema — it will never invent a category. It *can* return a wrong value that is inside the schema. That is why `agent-evals calibrate` exists: it plots the probabilities against labelled outcomes so you pick thresholds from a reliability table instead of from taste.
+Jev cannot return a value outside your schema — it will never invent a category. It *can* return a wrong value that is inside the schema. So do not pick a threshold because it looks like a lot; label the cases whose answer you already know and ask:
+
+```
+$ agent-evals calibrate examples/calibration/calibrate.suite.ts
+
+jev:grounded  n=6  brier=0.176  max gap=0.31
+
+  probability   n   predicted  observed   gap
+  0.3–0.4     1      0.31      0.00  -0.31
+  0.7–0.8     1      0.72      1.00  +0.28
+  0.8–0.9     1      0.88      1.00  +0.12
+  0.9–1.0     3      0.95      0.67  -0.29
+
+  Every prediction at or above 0.94 was correct here.
+```
+
+Read the last line. On this data, gating at 0.9 **would have let a wrong answer through** — the judge said 0.95 and was right two times in three. That is what the command is for.
 
 ## Non-goals
 
@@ -174,7 +195,7 @@ Not a prompt playground, not a labelling UI, not a tracing backend (it consumes 
 |---|---|
 | **M0** ✅ | types, `defineSuite`/`defineCase`, runner, 14 deterministic scorers, markdown + terminal report |
 | **M1** ✅ | Jev client + `jevJudge` + cassette record/replay |
-| M2 | CLI `diff` / `record` / `calibrate`, JSON reports |
+| **M2** ✅ | CLI `diff` / `record` / `calibrate`, JSON reports |
 | M3 | `agent-evals/vitest` helper |
 | M4 | `llmJudge` behind a flag, YAML cases, GitHub Action |
 | M5 | README polish, npm 0.1.0, [guarded-agent](https://github.com/marianoberton/guarded-agent) using it in CI |

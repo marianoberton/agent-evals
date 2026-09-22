@@ -344,9 +344,11 @@ export interface JevOptions {
   readonly inputPricePerMtok?: number;
 }
 
+export type CassetteMode = "auto" | "replay" | "record" | "rerecord" | "passthrough";
+
 export interface CassetteOptions {
   readonly dir?: string;
-  readonly mode?: "auto" | "replay" | "record" | "rerecord" | "passthrough";
+  readonly mode?: CassetteMode;
   readonly keepHeaders?: readonly string[];
 }
 
