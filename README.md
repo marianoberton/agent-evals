@@ -14,7 +14,7 @@ import { defineSuite, defineCase, scorers } from "agent-evals";
 export default defineSuite({
   name: "dealership-sales",
   threshold: 0.9,
-  agent: (input) => runTurn(input, deps),
+  agent: myAgent, // any (input) => Promise<Outcome>; see "Plugging in a real agent"
 
   // Suite scorers are invariants: they run on every case.
   scorers: [
@@ -108,6 +108,23 @@ interface Outcome {
 ```
 
 **Absent means unknown, not false.** A scorer that needs a field the agent never reported returns `pass: null` and renders `–`. It never fails an agent for something the agent did not claim to measure, and it never passes it either.
+
+### Plugging in a real agent
+
+Real runtimes do not have this shape, and they should not have to: the adapter is a
+handful of lines and it belongs on **their** side, where the trace vocabulary is known.
+[guarded-agent](https://github.com/marianoberton/guarded-agent)'s `runTurn` is
+`(state, inbound, deps) => Promise<TurnResult>`, so:
+
+```ts
+agent: (input) =>
+  runTurn(stateFrom(input.history), { conversationId: input.caseId, text: input.inbound.text, at: 0 }, deps)
+    .then(toOutcome), // actions → outbound/transitions, trace → toolCalls/latency/cost
+```
+
+This package exports no runtime types to the agent under test. The contract is
+structural, which is what makes `npm i -D agent-evals` from a clean project work and
+what keeps a zod-4 runtime from colliding with the zod-3 in here.
 
 ## Scorers
 
