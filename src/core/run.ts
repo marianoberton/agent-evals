@@ -1,9 +1,14 @@
+import { type Cassette, CassetteStore } from "../cassette/store.js";
+import { resolveJevBatch } from "../jev/batch.js";
+import { JevClient } from "../jev/client.js";
 import { scorersFor } from "./expect.js";
 import { hash32, normalizeOutcome } from "./normalize.js";
 import { caseScore, errored, meetsThreshold, suiteScore, toEntry } from "./score.js";
 import type {
   Case,
   CaseReport,
+  JevAnswer,
+  JevPlan,
   Outcome,
   Report,
   RunOptions,
@@ -61,14 +66,21 @@ async function mapWithConcurrency<T>(
   await Promise.all(workers);
 }
 
+interface RunContext {
+  jev: JevClient;
+  store: CassetteStore;
+}
+
 async function runCase(
   suite: Suite,
   kase: Case,
   opts: RunOptions,
   threshold: number,
+  ctx: RunContext,
 ): Promise<CaseReport> {
   const startedAt = performance.now();
   opts.events?.onCaseStart?.(kase);
+  const cassette: Cassette = ctx.store.openCase(kase.id);
 
   const active = scorersFor(suite, kase).filter(
     (s) => s.kind !== "llm" || opts.includeLlmJudge === true,
@@ -92,7 +104,7 @@ async function runCase(
         inbound: kase.inbound,
         tags: kase.tags,
         meta: kase.meta,
-        fetch: opts.fetch ?? globalThis.fetch,
+        fetch: cassette.fetch,
         signal: controller.signal,
         seed: hash32(`${suite.name}/${kase.id}`),
       }),
@@ -109,6 +121,7 @@ async function runCase(
   // A crashing agent scores 0 with a full row of ✗ — loudly worse than a wrong one,
   // never a hole in the table.
   if (!outcome || agentError) {
+    cassette.close(false); // a crash must never leave half a tape behind
     const err = agentError ?? new Error("agent returned nothing");
     const scores: ScoreEntry[] = active.map((s) =>
       toEntry(s, errored(`agent error: ${err.message}`, err.message, s.weight)),
@@ -128,12 +141,45 @@ async function runCase(
     return report;
   }
 
-  // The harness fills only what the agent did not report. From M1 these come from
-  // the cassette (recorded network time and usage), which is what keeps budget
-  // scorers both meaningful and reproducible under replay.
-  const measured = Math.round(performance.now() - wallStart);
-  const enriched: Outcome =
-    outcome.latencyMs === undefined ? { ...outcome, latencyMs: measured } : outcome;
+  // The harness fills only what the agent did not report — and it fills it from
+  // the cassette, not from the wall clock. On replay those are the numbers of the
+  // recorded run, which is what keeps `latencyUnder` both meaningful and
+  // byte-identical across two runs of the same suite.
+  const localMs = Math.round(performance.now() - wallStart);
+  const replayed = cassette.hits > 0 || cassette.misses > 0;
+  const enriched: Outcome = {
+    ...outcome,
+    latencyMs: outcome.latencyMs ?? (replayed ? Math.round(cassette.replayedMs) : localMs),
+    ...(outcome.costUsd === undefined && cassette.costUsd > 0 ? { costUsd: cassette.costUsd } : {}),
+    ...(outcome.tokens === undefined && cassette.tokens.inputTokens > 0
+      ? { tokens: cassette.tokens }
+      : {}),
+  };
+
+  // Phase 2 — plan. Pure and sync: scorers declare Jev questions, nobody calls out.
+  const plans = new Map<string, JevPlan>();
+  const planErrors = new Map<string, Error>();
+  const allowVolatile = new Set<string>();
+  for (const scorer of active) {
+    if (!scorer.plan) continue;
+    if ((scorer as { allowVolatileState?: boolean }).allowVolatileState)
+      allowVolatile.add(scorer.id);
+    try {
+      const plan = scorer.plan(enriched, kase);
+      if (plan) plans.set(scorer.id, plan);
+    } catch (e) {
+      planErrors.set(scorer.id, asError(e));
+    }
+  }
+
+  // Phase 3 — resolve. One Jev request per distinct state, through the cassette.
+  const answers: Map<string, Record<string, JevAnswer>> = await resolveJevBatch(
+    plans,
+    ctx.jev,
+    cassette.fetch,
+    planErrors,
+    { allowVolatile },
+  );
 
   const ctxBase = {
     outcome: enriched,
@@ -146,7 +192,13 @@ async function runCase(
 
   active.forEach((scorer: Scorer, index: number) => {
     try {
-      const result = scorer.score(ctxBase);
+      const scorerAnswers = answers.get(scorer.id);
+      const scorerError = planErrors.get(scorer.id);
+      const result = scorer.score({
+        ...ctxBase,
+        ...(scorerAnswers ? { answers: scorerAnswers } : {}),
+        ...(scorerError ? { planError: scorerError } : {}),
+      });
       if (isThenable(result)) {
         if (scorer.kind === "deterministic") {
           throw new Error(
@@ -180,6 +232,7 @@ async function runCase(
   });
 
   await Promise.all(pending);
+  cassette.close(true);
 
   const report: CaseReport = {
     id: kase.id,
@@ -250,13 +303,22 @@ export async function runSuite<Ids extends string>(
   const threshold = options.threshold ?? suite.threshold;
   const selected = selectCases(suite.cases, options as RunOptions);
 
+  const ctx: RunContext = {
+    jev: new JevClient({ ...suite.jev, ...options.jev }),
+    store: new CassetteStore(
+      suite.name,
+      { ...suite.cassettes, ...options.cassettes },
+      options.fetch ?? globalThis.fetch,
+    ),
+  };
+
   // Pre-sized by declaration index: the report is identical at any concurrency.
   const reports = new Array<CaseReport>(selected.length);
   await mapWithConcurrency(
     selected,
     options.concurrency ?? suite.concurrency ?? 4,
     async (kase, i) => {
-      reports[i] = await runCase(suite as Suite, kase, options as RunOptions, threshold);
+      reports[i] = await runCase(suite as Suite, kase, options as RunOptions, threshold, ctx);
     },
   );
 
@@ -271,11 +333,26 @@ export async function runSuite<Ids extends string>(
     passed: meetsThreshold(score, threshold, cases),
     cases,
     scorers: summarize(cases),
+    usage: {
+      ...(ctx.jev.usage.requests > 0
+        ? {
+            jev: {
+              requests: ctx.jev.usage.requests,
+              inputTokens: ctx.jev.usage.inputTokens,
+              outputTokens: ctx.jev.usage.outputTokens,
+              costUsd: ctx.jev.costUsd,
+            },
+          }
+        : {}),
+    },
     runMeta: {
       startedAt,
       durationMs: Math.round(performance.now() - t0),
       includeLlmJudge: options.includeLlmJudge === true,
       agentEvalsVersion: VERSION,
+      cassetteMode: ctx.store.mode,
+      cassetteHits: ctx.store.hits,
+      cassetteMisses: ctx.store.misses,
     },
   };
 }

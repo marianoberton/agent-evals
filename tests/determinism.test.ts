@@ -30,6 +30,9 @@ describe("determinism", () => {
     const report = await runSuite(echoSuite);
     expect(Object.keys(report.runMeta).sort()).toEqual([
       "agentEvalsVersion",
+      "cassetteHits",
+      "cassetteMisses",
+      "cassetteMode",
       "durationMs",
       "includeLlmJudge",
       "startedAt",

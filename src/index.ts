@@ -31,6 +31,30 @@ export type { ScoreInit } from "./core/score.js";
 export { AgentTimeoutError, runSuite, selectCases, VERSION } from "./core/run.js";
 
 export { scorers } from "./scorers/index.js";
+export { defaultState, jevJudge } from "./scorers/jevJudge.js";
+export type { JevJudgeOptions } from "./scorers/jevJudge.js";
+
+/** Question builders: `jev.noul(...)`, `jev.choice(...)`, `jev.score(...)`. */
+export * as jev from "./jev/questions.js";
+export {
+  DEFAULTS as JEV_DEFAULTS,
+  JevClient,
+  JevError,
+  readChoice,
+  readNoul,
+  readScore,
+} from "./jev/client.js";
+export type { JevClientOptions, JevUsage } from "./jev/client.js";
+export { assertTokenBudget, JevBudgetError, TOKEN_BUDGET } from "./jev/questions.js";
+export {
+  assertDeterministicState,
+  NonDeterministicStateError,
+  resolveJevBatch,
+} from "./jev/batch.js";
+
+export { Cassette, CassetteMissError, CassetteStore } from "./cassette/store.js";
+export type { CassetteMode, Interaction } from "./cassette/store.js";
+export { canonicalize, hashRequest, slugify } from "./cassette/hash.js";
 export * as scorerFactories from "./scorers/index.js";
 
 export { renderMarkdown } from "./report/markdown.js";
@@ -41,11 +65,13 @@ export type {
   Agent,
   AgentInput,
   ArgsSchema,
+  CassetteOptions,
   Case,
   CaseReport,
   CaseStatus,
   Expectations,
   JevAnswer,
+  JevOptions,
   JevPlan,
   JevQuestion,
   Message,

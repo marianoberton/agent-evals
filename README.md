@@ -4,7 +4,7 @@ Most agent evals are an LLM grading another LLM on a 1–5 scale. That is not so
 
 Framework-agnostic: the agent under test is `(input) => Promise<Outcome>`. Model calls are recorded once and replayed, so the suite is fast, free and reproducible.
 
-> **Status: M0.** Core contract, runner, 14 deterministic scorers and the report. Jev, cassettes, the CLI's other commands, the vitest helper and the GitHub Action land in M1–M5.
+> **Status: M1.** Core contract, runner, 14 deterministic scorers, the report, the Jev client, `jevJudge` and cassette record/replay. The CLI's other commands, the vitest helper, `llmJudge`, YAML cases and the GitHub Action land in M2–M5.
 
 ## The 20-line example
 
@@ -139,13 +139,26 @@ what keeps a zod-4 runtime from colliding with the zod-3 in here.
 | `matches(re)` / `replied()` / `schema(zod)` | pattern, non-empty reply, structured output |
 | `latencyUnder` / `costUnder` / `tokensUnder` / `maxTurns` | budgets, read from what the agent reported |
 
-Every one ships with a passing test, a failing test and a skip test. Details in [docs/SCORERS.md](docs/SCORERS.md); writing cases is in [docs/WRITING_CASES.md](docs/WRITING_CASES.md).
+| `jevJudge({ question, passAbove })` | a calibrated probability from Jev clears a threshold |
+
+Every one ships with a passing test, a failing test and a skip test. Details in
+[docs/SCORERS.md](docs/SCORERS.md); writing cases is in [docs/WRITING_CASES.md](docs/WRITING_CASES.md);
+the judge is in [docs/JEV_JUDGE.md](docs/JEV_JUDGE.md) and recording in [docs/CASSETTES.md](docs/CASSETTES.md).
 
 ## Determinism
 
 **A suite with cassettes present produces the same report twice. Otherwise it is a bug**, and there is a test that says so. Everything that cannot hold that promise — wall clock, machine load — lives in `report.runMeta` and `CaseReport.durationMs`, which `agent-evals diff` ignores.
 
-That is also why budget scorers read `outcome.latencyMs` rather than the harness's stopwatch: from M1 the cassette records and replays the real network time of the recorded run, so a replayed suite still fails a 20-second turn, identically, every time.
+That is also why budget scorers read `outcome.latencyMs` rather than the harness's stopwatch: the cassette records and replays the real network time of the recorded run, so a replayed suite still fails a 20-second turn, identically, every time.
+
+Pass the `fetch` you are given to your provider and every model call is taped:
+
+```ts
+agent: async ({ history, inbound, fetch }) => myProvider.complete({ history, inbound, fetch })
+```
+
+First run records to `evals/__cassettes__/<suite>/<case>.json`; every run after makes
+zero network calls. CI is forced into strict replay, so it can never spend money.
 
 ## Jev is not infallible
 
@@ -160,7 +173,7 @@ Not a prompt playground, not a labelling UI, not a tracing backend (it consumes 
 | | Deliverable |
 |---|---|
 | **M0** ✅ | types, `defineSuite`/`defineCase`, runner, 14 deterministic scorers, markdown + terminal report |
-| M1 | Jev client + `jevJudge` + cassette record/replay |
+| **M1** ✅ | Jev client + `jevJudge` + cassette record/replay |
 | M2 | CLI `diff` / `record` / `calibrate`, JSON reports |
 | M3 | `agent-evals/vitest` helper |
 | M4 | `llmJudge` behind a flag, YAML cases, GitHub Action |

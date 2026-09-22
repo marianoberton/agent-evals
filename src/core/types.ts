@@ -255,6 +255,8 @@ export interface Suite<Ids extends string = string> {
   readonly cases: readonly Case[];
   readonly concurrency?: number;
   readonly timeoutMs?: number;
+  readonly jev?: JevOptions;
+  readonly cassettes?: CassetteOptions;
   /** Phantom, carries the literal case ids so `runSuite({ only })` is typed. */
   readonly __ids?: Ids;
 }
@@ -304,12 +306,23 @@ export interface Report {
   readonly passed: boolean;
   readonly cases: readonly CaseReport[];
   readonly scorers: readonly ScorerSummary[];
+  readonly usage: {
+    readonly jev?: {
+      requests: number;
+      inputTokens: number;
+      outputTokens: number;
+      costUsd: number;
+    };
+  };
   /** Everything non-deterministic lives here and is excluded from `diff`. */
   readonly runMeta: {
     readonly startedAt: string;
     readonly durationMs: number;
     readonly includeLlmJudge: boolean;
     readonly agentEvalsVersion: string;
+    readonly cassetteMode: string;
+    readonly cassetteHits: number;
+    readonly cassetteMisses: number;
   };
 }
 
@@ -318,6 +331,23 @@ export interface Report {
 export interface RunEvents {
   onCaseStart?(c: Case): void;
   onCaseEnd?(r: CaseReport): void;
+}
+
+export interface JevOptions {
+  readonly baseUrl?: string;
+  readonly model?: string;
+  readonly apiKey?: string;
+  readonly zdr?: boolean;
+  readonly maxRps?: number;
+  readonly maxRetries?: number;
+  readonly timeoutMs?: number;
+  readonly inputPricePerMtok?: number;
+}
+
+export interface CassetteOptions {
+  readonly dir?: string;
+  readonly mode?: "auto" | "replay" | "record" | "rerecord" | "passthrough";
+  readonly keepHeaders?: readonly string[];
 }
 
 export interface RunOptions<Ids extends string = string> {
@@ -329,6 +359,8 @@ export interface RunOptions<Ids extends string = string> {
   readonly includeLlmJudge?: boolean;
   readonly signal?: AbortSignal;
   readonly events?: RunEvents;
-  /** Injected for tests and, from M1, by the cassette layer. */
+  readonly jev?: JevOptions;
+  readonly cassettes?: CassetteOptions;
+  /** The real network, which the cassette wraps. Injected in tests. */
   readonly fetch?: typeof globalThis.fetch;
 }
