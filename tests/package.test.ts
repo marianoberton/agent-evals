@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 /**
  * The M5 gate: `npm i -D agent-evals` works from a clean project.
@@ -67,6 +67,17 @@ const npm = (args: string[], cwd: string): string => {
     shell: true,
   });
 };
+
+/**
+ * The gate packs the real tarball, so it needs a real `dist/`. Saying that out
+ * loud beats an assertion about a missing file, which sends you looking at the
+ * `files` list instead of at the build you forgot to run.
+ */
+beforeAll(() => {
+  if (!existsSync(join(ROOT, "dist", "index.js"))) {
+    throw new Error("dist/ is missing — run `pnpm build` before the packaging tests");
+  }
+});
 
 describe("the published package", () => {
   it("declares the entry points it promises", () => {

@@ -39,7 +39,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "evals": "tsx src/cli.ts run examples/echo-agent/echo.suite.ts",
-    "prepublishOnly": "pnpm build"
+    "prepublishOnly": "pnpm build",
+    "verify": "pnpm lint && pnpm typecheck && pnpm build && pnpm test:coverage"
   },
   "dependencies": {
     "picocolors": "^1.1.1",

@@ -25,8 +25,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
-      - run: pnpm test:coverage
+      # Build first: the packaging gate packs the real tarball, so dist/ has to
+      # exist before the tests run.
       - run: pnpm build
+      - run: pnpm test:coverage
 
       - name: validate the examples
         run: node dist/cli.js validate examples/echo-agent/echo.suite.ts examples/calibration/calibrate.suite.ts examples/yaml-cases/yaml.suite.ts examples/guarded-agent/dealership.suite.ts
