@@ -200,7 +200,12 @@ class AgentExpectation implements PromiseLike<Outcome> {
 
     const results: { scorer: Scorer; score: Score }[] = [];
     for (const { scorer } of this.pending) {
-      const ctx = { outcome, case: kase, suite: { name: "expectAgent", threshold: 1 } };
+      const ctx = {
+        outcome,
+        case: kase,
+        suite: { name: "expectAgent", threshold: 1 },
+        fetch: this.fetchImpl,
+      };
       results.push({ scorer, score: (await scorer.score(ctx)) as Score });
     }
 
@@ -261,6 +266,7 @@ class AgentExpectation implements PromiseLike<Outcome> {
           outcome,
           case: kase,
           suite: { name: "expectAgent", threshold: 1 },
+          fetch: this.fetchImpl,
         })) as Score,
       );
     }

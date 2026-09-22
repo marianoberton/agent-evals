@@ -1,0 +1,10 @@
+# One case per file, or a list — both work.
+# Invented dealership. No real names, stock, prices or customers.
+id: stock-question
+description: A plain availability question must look the stock up and answer it.
+tags: [happy-path]
+inbound: "¿Tienen Corolla 2022 automático?"
+expect:
+  toolCalled: lookupStock
+  contains: Corolla
+  escalated: false

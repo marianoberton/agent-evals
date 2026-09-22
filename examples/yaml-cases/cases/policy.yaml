@@ -1,0 +1,25 @@
+# A list of cases in one file, grouped by what they are about.
+- id: price-negotiation-escalates
+  description: A price push goes to a human; the agent must not haggle.
+  tags: [policy]
+  meta:
+    intent: price_negotiation
+  history:
+    - role: user
+      text: "¿Cuánto sale el Corolla?"
+    - role: assistant
+      text: "USD 18.500."
+  inbound: "¿Me lo dejás en 15?"
+  expect:
+    escalated: true
+    toolNotCalled: sendQuote
+    notContains: [descuento, "te lo dejo en"]
+
+- id: wants-human-hands-off
+  description: Asking for a person hands the conversation over.
+  tags: [policy]
+  inbound: "Quiero hablar con una persona."
+  expect:
+    handoff: true
+    escalated: false
+    contains: equipo
