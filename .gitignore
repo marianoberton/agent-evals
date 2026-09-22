@@ -10,3 +10,6 @@ coverage/
 
 # generated reports; cassettes ARE committed on purpose
 evals/reports/
+
+# local explainer, not part of the package
+explicacion.html

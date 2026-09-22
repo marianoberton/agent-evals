@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 20 is the floor declared in `engines`; 22 is what we develop on.
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      # No `version:` here on purpose: packageManager in package.json is the
+      # single source of truth, and specifying both is an error.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test:coverage
+      - run: pnpm build
+
+      # The example is the contract. If it stops passing, the contract broke.
+      - name: echo-agent example
+        run: node dist/cli.js run examples/echo-agent/echo.suite.ts --fail-under --no-report
+
+      # And the buggy agent must stay red, or the harness stopped catching things.
+      - name: buggy agent must fail
+        run: |
+          if node dist/cli.js run tests/fixtures/failing.suite.ts --fail-under --no-report; then
+            echo "::error::the deliberately buggy suite passed; the harness is not catching failures"
+            exit 1
+          fi
