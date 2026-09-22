@@ -5,14 +5,24 @@
   "keywords": ["evals", "llm", "agents", "testing", "ci", "jev", "typesafe"],
   "license": "MIT",
   "author": "Mariano Berton",
-  "repository": { "type": "git", "url": "git+https://github.com/marianoberton/agent-evals.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marianoberton/agent-evals.git"
+  },
   "homepage": "https://github.com/marianoberton/agent-evals#readme",
   "bugs": "https://github.com/marianoberton/agent-evals/issues",
   "type": "module",
-  "engines": { "node": ">=20.10" },
-  "bin": { "agent-evals": "./dist/cli.js" },
+  "engines": {
+    "node": ">=20.10"
+  },
+  "bin": {
+    "agent-evals": "./dist/cli.js"
+  },
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
     "./package.json": "./package.json"
   },
   "files": ["dist", "README.md", "LICENSE"],
@@ -42,10 +52,16 @@
     "vitest": "^2.1.8"
   },
   "peerDependencies": {
+    "tsx": ">=4.0.0",
     "vitest": ">=1.0.0"
   },
   "peerDependenciesMeta": {
-    "vitest": { "optional": true }
+    "tsx": {
+      "optional": true
+    },
+    "vitest": {
+      "optional": true
+    }
   },
   "packageManager": "pnpm@9.12.3"
 }

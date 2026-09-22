@@ -28,17 +28,23 @@ Options:
 `;
 
 /**
- * TypeScript suites need a loader. Node strips types natively from 22.18; before
- * that, tsx does it. Either way the error must name the fix, not just fail.
+ * TypeScript suites need a loader.
+ *
+ * tsx is preferred even on a Node that strips types natively, because native
+ * stripping does not rewrite the `.js` specifiers that `moduleResolution:
+ * NodeNext` forces you to write — a suite importing `./agent.js` next to an
+ * `agent.ts` resolves under tsx and fails under plain Node.
+ *
+ * Falling back to a bare import is still right: a suite whose imports carry
+ * real `.ts` extensions loads on Node >= 22.18 with no loader at all.
  */
 async function ensureTsSupport(file: string): Promise<void> {
   if (!/\.(m?ts|cts)$/.test(file)) return;
-  if ((process as { features?: { typescript?: unknown } }).features?.typescript) return;
   try {
     const tsx = (await import("tsx/esm/api")) as { register: () => void };
     tsx.register();
   } catch {
-    // Left to the import below to fail with the real syntax error; the hint is in the catch there.
+    // Left to the import below to fail with the real error; the hint is in its catch.
   }
 }
 
