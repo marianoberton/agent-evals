@@ -63,9 +63,17 @@ export function renderTerminal(report: Report): string {
   const failing = report.cases.filter((c) => failuresOf(c).length > 0);
   if (failing.length > 0) {
     lines.push("", pc.bold("Failures"));
-    for (const c of failing) {
+    // One label column across the whole block, so the reasons line up and you can
+    // read down them. Five ragged reasons are five separate things to parse.
+    const labelWidth = Math.max(
+      ...failing.flatMap((c) => failuresOf(c).map((f) => width(f.label))),
+    );
+    for (const [i, c] of failing.entries()) {
+      if (i > 0) lines.push("");
       lines.push(`  ${pc.red(CROSS)} ${pc.bold(c.id)}`);
-      for (const f of failuresOf(c)) lines.push(`      ${pc.dim(f.label)}  ${f.reason}`);
+      for (const f of failuresOf(c)) {
+        lines.push(`      ${pc.dim(pad(f.label, labelWidth))}  ${f.reason}`);
+      }
       if (c.outcome) {
         const reply = outboundText(c.outcome).trim().replace(/\s+/g, " ");
         if (reply) lines.push(pc.dim(`      reply: ${reply.slice(0, 160)}`));

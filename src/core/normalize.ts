@@ -60,7 +60,7 @@ export function outboundText(outcome: Outcome): string {
  * skip rather than claim the transition did not happen.
  */
 export function didTransition(outcome: Outcome, type: TransitionType): boolean | null {
-  if (outcome.transitions === undefined) return null;
+  if (outcome.transitions === undefined) return null; // the agent never said
   return outcome.transitions.some((t) => t.type === type);
 }
 
