@@ -10,7 +10,7 @@ Most agent evals ask one LLM to grade another on a 1–5 scale. You cannot gate 
 
 The failures that actually reach production are not matters of taste. The agent called the wrong tool. It kept haggling instead of handing the conversation to a human. It promised a discount it had no authority to give. It took 25 seconds. It cost forty times what that reply should cost. Every one of those is checkable with a rule, and a rule runs in a millisecond for free.
 
-This library makes those checks first-class. For the judgments that genuinely need semantics — *is this reply on-brand, did it actually answer the question* — it asks [Jev](https://docs.typesafe.ai), a System One model that returns a **calibrated probability** instead of prose. `0.91` compares against a threshold. A paragraph does not.
+This library makes those checks first-class. For the judgments that genuinely need semantics — *is this reply on-brand, did it actually answer the question* — it asks [Jev](https://docs.typesafe.ai), TypeSafe AI's System One model ([typesafe.ai](https://typesafe.ai)): instead of writing text, it returns a typed decision — a choice, a score, or a yes/no as a **calibrated probability** — in ~400 ms. `0.91` compares against a threshold. A paragraph does not.
 
 ## What it catches
 
@@ -45,7 +45,7 @@ $ echo $?
 1
 ```
 
-One message, five distinct production failures, no opinion required to find any of them. Exit code 1, so CI stops there.
+The broken reply, _"Dale, te lo dejo en 17 con descuento"_, is "Sure, I'll let you have it for 17, with a discount." One message, five distinct production failures, no opinion required to find any of them. Exit code 1, so CI stops there.
 
 Those `–` cells matter as much as the crosses, and the next section explains why.
 
@@ -66,7 +66,7 @@ export default defineSuite({
     scorers.costUnder(0.05),
     scorers.escalatedWhen({ intent: "price_negotiation" }),
     jevJudge({
-      question: jev.noul("Does the reply stay within what the dealership knows?"),
+      question: jev.noul("Does the reply stay within what the dealership knows?"), // noul = yes/no, returned as a probability in [0, 1]
       passAbove: 0.94,
     }),
   ],
@@ -74,16 +74,16 @@ export default defineSuite({
   cases: [
     defineCase({
       id: "stock-question",
-      inbound: "¿Tienen Corolla 2022 automático?",
+      inbound: "¿Tienen Corolla 2022 automático?", // "Do you have a 2022 automatic Corolla?"
       expect: { toolCalled: "lookupStock", escalated: false },
     }),
     defineCase({
       id: "price-negotiation-escalates",
       history: [
-        { role: "user", text: "¿Cuánto sale el Corolla?" },
+        { role: "user", text: "¿Cuánto sale el Corolla?" }, // "How much is the Corolla?"
         { role: "assistant", text: "USD 18.500." },
       ],
-      inbound: "¿Me lo dejás en 15?",
+      inbound: "¿Me lo dejás en 15?", // "Can you do 15?"
       expect: { escalated: true, toolNotCalled: "sendQuote" },
       meta: { intent: "price_negotiation" },
       tags: ["policy"],
@@ -215,7 +215,7 @@ Same runner, same watch mode, same reporter, same CI job as everything else. Or 
 ```ts
 await expectAgent(runTurn, deps)
   .given(history)
-  .receives("¿Me lo dejás en 15?")
+  .receives("¿Me lo dejás en 15?")   // "Can you do 15?"
   .toEscalate()
   .toNotCallTool("sendQuote");
 ```
@@ -239,7 +239,7 @@ Runs the suites, fails the job under the threshold, and posts the report as one 
 id: price-negotiation-escalates
 tags: [policy]
 meta: { intent: price_negotiation }
-inbound: "¿Me lo dejás en 15?"
+inbound: "¿Me lo dejás en 15?"   # "Can you do 15?"
 expect:
   escalated: true
   toolNotCalled: sendQuote
